@@ -203,6 +203,12 @@ type GuildEmojisUpdate struct {
 	Emojis  []*Emoji `json:"emojis"`
 }
 
+// A GuildStickersUpdate is the data for a GuildStickersUpdate event.
+type GuildStickersUpdate struct {
+	GuildID  string     `json:"guild_id"`
+	Stickers []*Sticker `json:"stickers"`
+}
+
 // A GuildMembersChunk is the data for a GuildMembersChunk event.
 type GuildMembersChunk struct {
 	GuildID    string      `json:"guild_id"`
@@ -533,4 +539,22 @@ type EntitlementUpdate struct {
 // NOTE: Entitlements are not deleted when they expire.
 type EntitlementDelete struct {
 	*Entitlement
+}
+
+// SubscriptionCreate is the data for an SubscriptionCreate event.
+// https://discord.com/developers/docs/monetization/implementing-app-subscriptions#using-subscription-events-for-the-subscription-lifecycle
+type SubscriptionCreate struct {
+	*Subscription
+}
+
+// SubscriptionUpdate is the data for an SubscriptionUpdate event.
+// https://discord.com/developers/docs/monetization/implementing-app-subscriptions#using-subscription-events-for-the-subscription-lifecycle
+type SubscriptionUpdate struct {
+	*Subscription
+}
+
+// SubscriptionDelete is the data for an SubscriptionDelete event.
+// https://discord.com/developers/docs/monetization/implementing-app-subscriptions#using-subscription-events-for-the-subscription-lifecycle
+type SubscriptionDelete struct {
+	*Subscription
 }

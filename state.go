@@ -43,6 +43,7 @@ type State struct {
 	TrackChannels      bool
 	TrackThreads       bool
 	TrackEmojis        bool
+	TrackStickers      bool
 	TrackMembers       bool
 	TrackThreadMembers bool
 	TrackRoles         bool
@@ -64,6 +65,7 @@ func NewState() *State {
 		TrackChannels:      true,
 		TrackThreads:       true,
 		TrackEmojis:        true,
+		TrackStickers:      true,
 		TrackMembers:       true,
 		TrackThreadMembers: true,
 		TrackRoles:         true,
@@ -1074,6 +1076,17 @@ func (s *State) OnInterface(se *Session, i interface{}) (err error) {
 			s.Lock()
 			defer s.Unlock()
 			guild.Emojis = t.Emojis
+		}
+	case *GuildStickersUpdate:
+		if s.TrackStickers {
+			var guild *Guild
+			guild, err = s.Guild(t.GuildID)
+			if err != nil {
+				return err
+			}
+			s.Lock()
+			defer s.Unlock()
+			guild.Stickers = t.Stickers
 		}
 	case *ChannelCreate:
 		if s.TrackChannels {
