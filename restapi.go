@@ -3995,7 +3995,7 @@ func (s *Session) SendInteractions(guildID, channelID string, cmd *ApplicationCo
 	}
 
 	endpoint := EndpointInteractions
-	_, err := s.request("POST", endpoint, contentType, body, endpoint, 0, reqOptions...)
+	_, err := s.RequestRaw("POST", endpoint, contentType, body, endpoint, 0, reqOptions...)
 	return err
 }
 
