@@ -26,7 +26,7 @@ const (
 
 var (
 	droidCapabilities      = 30717
-	droidClientBuildNumber = 380092
+	droidClientBuildNumber = 459219
 	droidGatewayURL        = ""
 	mainPageLoaded         = false
 )
