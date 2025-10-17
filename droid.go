@@ -34,7 +34,7 @@ var (
 var mainPageLoadLock sync.Mutex
 
 const (
-	DroidBrowserMajorVersion = "134"
+	DroidBrowserMajorVersion = "141"
 	DroidBrowserVersion      = DroidBrowserMajorVersion + ".0.0.0"
 	DroidBrowserUserAgent    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/" + DroidBrowserVersion + " Safari/537.36"
 )
