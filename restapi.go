@@ -13,6 +13,7 @@ package discordgo
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -154,6 +155,17 @@ func WithAuditLogReason(reason string) RequestOption {
 // WithLocale changes accepted locale of the request.
 func WithLocale(locale Locale) RequestOption {
 	return WithHeader("X-Discord-Locale", string(locale))
+}
+
+// WithContextProperties changes the X-Context-Properties header sent with the request.
+func WithContextProperties(location string) RequestOption {
+	jsonText, err := json.Marshal(map[string]string{
+		"location": location,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return WithHeader("X-Context-Properties", base64.StdEncoding.EncodeToString(jsonText))
 }
 
 func WithReferer(referer string, args ...any) RequestOption {
@@ -2058,6 +2070,7 @@ func (s *Session) ChannelMessageSendComplex(channelID string, data *MessageSend,
 					data.TTS = &falseVal
 				}
 			}
+			options = append(options, WithContextProperties("chat_input"))
 		}
 		response, err = s.RequestWithBucketID("POST", endpoint, data, endpoint, options...)
 	}
