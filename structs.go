@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -146,7 +147,13 @@ type Session struct {
 	// used to make sure gateway websocket writes do not happen concurrently
 	wsMutex sync.Mutex
 
-	IsUser bool
+	IsUser           bool
+	launchSignature  LaunchSignature
+	launchID         uuid.UUID
+	HeartbeatSession HeartbeatSession
+	fetchHeaders     map[string]string
+	downloadHeaders  map[string]string
+	imageHeaders     map[string]string
 
 	Logger func(msgL, caller int, format string, a ...interface{})
 }

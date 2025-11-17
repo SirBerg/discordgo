@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -202,6 +203,22 @@ func (s *Session) Open() error {
 	if err != nil {
 		return err
 	}
+	if s.IsUser && e.Type == "READY" {
+		s.wsMutex.Lock()
+		err := s.wsConn.WriteJSON(
+			updateTimeSpentSessionOp{
+				Op: 41,
+				Data: updateTimeSpentSessionData{
+					InitializationTimestamp: s.HeartbeatSession.LastUsedTimestamp.UnixMilli(),
+					SessionID:               s.HeartbeatSession.ID,
+					ClientLaunchID:          s.launchID,
+				},
+			})
+		s.wsMutex.Unlock()
+		if err != nil {
+			s.log(LogError, "Failed to send UPDATE_TIME_SPENT_SESSION_ID, continuing: %v", err)
+		}
+	}
 	if e.Type != `READY` && e.Type != `RESUMED` {
 		// This is not fatal, but it does not follow their API documentation.
 		s.log(LogWarning, "Expected READY/RESUMED, instead got:\n%#v\n", e)
@@ -293,9 +310,45 @@ func (s *Session) listen(wsConn *websocket.Conn, listening <-chan interface{}) {
 	}
 }
 
-type heartbeatOp struct {
-	Op   int   `json:"op"`
-	Data int64 `json:"d"`
+func newForegroundedQosHeartbeatOp(seq int64) qosHeartbeatOp {
+	return qosHeartbeatOp{
+		Op: 40,
+		Data: qosHeartbeatData{
+			Seq: seq,
+			Qos: qos{
+				Active:  true,
+				Ver:     26,
+				Reasons: []string{"foregrounded"},
+			},
+		},
+	}
+}
+
+type qos struct {
+	Active  bool     `json:"active"`
+	Ver     int      `json:"ver"`
+	Reasons []string `json:"reasons"`
+}
+
+type qosHeartbeatData struct {
+	Seq int64 `json:"seq"`
+	Qos qos   `json:"qos"`
+}
+
+type qosHeartbeatOp struct {
+	Op   int              `json:"op"`
+	Data qosHeartbeatData `json:"d"`
+}
+
+type updateTimeSpentSessionData struct {
+	InitializationTimestamp int64     `json:"initialization_timestamp"`
+	SessionID               uuid.UUID `json:"session_id"`
+	ClientLaunchID          uuid.UUID `json:"client_launch_id"`
+}
+
+type updateTimeSpentSessionOp struct {
+	Op   int                        `json:"op"`
+	Data updateTimeSpentSessionData `json:"d"`
 }
 
 type helloOp struct {
@@ -335,7 +388,7 @@ func (s *Session) heartbeat(wsConn *websocket.Conn, listening <-chan interface{}
 		s.log(LogDebug, "sending gateway websocket heartbeat seq %d", sequence)
 		s.wsMutex.Lock()
 		s.LastHeartbeatSent = time.Now().UTC()
-		err = wsConn.WriteJSON(heartbeatOp{1, sequence})
+		err = wsConn.WriteJSON(newForegroundedQosHeartbeatOp(sequence))
 		s.wsMutex.Unlock()
 		if err != nil || time.Now().UTC().Sub(last) > (heartbeatIntervalMsec*FailedHeartbeatAcks) {
 			if err != nil {
@@ -701,7 +754,7 @@ func (s *Session) onEvent(messageType int, message []byte, isOnConnect bool) (*E
 	if e.Operation == 1 {
 		s.log(LogInformational, "sending heartbeat in response to Op1")
 		s.wsMutex.Lock()
-		err = s.wsConn.WriteJSON(heartbeatOp{1, atomic.LoadInt64(s.sequence)})
+		err = s.wsConn.WriteJSON(newForegroundedQosHeartbeatOp(atomic.LoadInt64(s.sequence)))
 		s.wsMutex.Unlock()
 		if err != nil {
 			s.log(LogError, "error sending heartbeat in response to Op1")

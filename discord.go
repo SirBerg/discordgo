@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -27,9 +28,12 @@ const VERSION = "0.29.0"
 
 // New creates a new Discord session with provided token.
 // If the token is for a bot, it must be prefixed with "Bot "
-// 		e.g. "Bot ..."
+//
+//	e.g. "Bot ..."
+//
 // Or if it is an OAuth2 token, it must be prefixed with "Bearer "
-//		e.g. "Bearer ..."
+//
+//	e.g. "Bearer ..."
 func New(token string) (s *Session, err error) {
 	// Create an empty Session interface.
 	s = &Session{
@@ -63,12 +67,17 @@ func New(token string) (s *Session, err error) {
 	s.Token = token
 
 	if token != "" && !strings.HasPrefix(token, "Bot ") {
+		sig, err := NewVanillaSignature()
+		if err != nil {
+			return nil, err
+		}
+
 		s.Identify.Presence.Activities = make([]Activity, 0)
 		s.Identify.Compress = false
 		s.Identify.LargeThreshold = 0
 		s.Identify.Presence.Status = droidStatus
 		s.Identify.Presence.AFK = true
-		s.Identify.Properties = droidIdentifyProperties
+
 		s.Identify.Capabilities = droidCapabilities
 		s.Identify.ClientState = &ClientState{
 			//HighestLastMessageID:     "0",
@@ -81,6 +90,11 @@ func New(token string) (s *Session, err error) {
 		s.Identify.Intents = 0
 
 		s.UserAgent = DroidBrowserUserAgent
+
+		s.launchSignature = sig
+		s.launchID = uuid.New()
+		s.HeartbeatSession = NewHeartbeatSession()
+		s.UpdateUserHeaders()
 
 		s.IsUser = true
 	}
