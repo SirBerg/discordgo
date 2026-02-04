@@ -163,6 +163,10 @@ type Message struct {
 
 	// A poll object.
 	Poll *Poll `json:"poll"`
+
+	// Nonce is used for optimistic message sending. Only present in MESSAGE_CREATE
+	// events to confirm delivery of a message with a matching nonce.
+	Nonce StringOrInt `json:"nonce,omitempty"`
 }
 
 // UnmarshalJSON is a helper function to unmarshal the Message.
