@@ -280,6 +280,9 @@ type FilePrepare struct {
 	Size int    `json:"file_size"`
 	Name string `json:"filename"`
 	ID   string `json:"id"`
+
+	IsClip              *bool  `json:"is_clip,omitempty"`
+	OriginalContentType string `json:"original_content_type,omitempty"`
 }
 
 type ReqPrepareAttachments struct {
