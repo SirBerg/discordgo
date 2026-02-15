@@ -401,7 +401,8 @@ type MessageAttachment struct {
 	Size        int    `json:"size,omitempty"`
 	Ephemeral   bool   `json:"ephemeral,omitempty"`
 
-	UploadedFilename string `json:"uploaded_filename"`
+	UploadedFilename    string `json:"uploaded_filename"`
+	OriginalContentType string `json:"original_content_type,omitempty"`
 
 	Waveform        []byte  `json:"waveform,omitempty"`
 	DurationSeconds float64 `json:"duration_secs,omitempty"`
