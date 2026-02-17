@@ -33,6 +33,54 @@ type MessageComponent interface {
 	Type() ComponentType
 }
 
+// UnknownComponent represents an unknown or unsupported component type.
+// This allows the library to handle new component types gracefully without erroring.
+type UnknownComponent struct {
+	// ComponentType is the type of the unknown component.
+	ComponentType ComponentType `json:"type"`
+	// RawData contains the raw JSON data of the unknown component.
+	RawData json.RawMessage `json:"-"`
+}
+
+// Type returns the component type.
+func (u UnknownComponent) Type() ComponentType {
+	return u.ComponentType
+}
+
+// MarshalJSON marshals the unknown component back to its original JSON representation.
+func (u UnknownComponent) MarshalJSON() ([]byte, error) {
+	if u.RawData != nil {
+		return u.RawData, nil
+	}
+	return Marshal(struct {
+		Type ComponentType `json:"type"`
+	}{
+		Type: u.ComponentType,
+	})
+}
+
+// UnmarshalJSON unmarshals the raw JSON data into the UnknownComponent.
+func (u *UnknownComponent) UnmarshalJSON(data []byte) error {
+	var v struct {
+		Type ComponentType `json:"type"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	u.ComponentType = v.Type
+	u.RawData = make(json.RawMessage, len(data))
+	copy(u.RawData, data)
+	return nil
+}
+
+// String returns the raw JSON representation of the unknown component as a string.
+func (u UnknownComponent) String() string {
+	if u.RawData != nil {
+		return string(u.RawData)
+	}
+	return ""
+}
+
 type unmarshalableMessageComponent struct {
 	MessageComponent
 }
@@ -72,7 +120,13 @@ func (umc *unmarshalableMessageComponent) UnmarshalJSON(src []byte) error {
 	case ContainerComponent:
 		umc.MessageComponent = &Container{}
 	default:
-		return fmt.Errorf("unknown component type: %d", v.Type)
+		// Handle unknown component types gracefully by using UnknownComponent
+		unknown := &UnknownComponent{}
+		if err := unknown.UnmarshalJSON(src); err != nil {
+			return err
+		}
+		umc.MessageComponent = unknown
+		return nil
 	}
 	return json.Unmarshal(src, umc.MessageComponent)
 }
